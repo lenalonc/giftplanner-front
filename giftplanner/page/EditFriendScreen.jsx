@@ -14,30 +14,31 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Icon from "react-native-vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";
+import { API_BASE } from "../config";
 
 export const EditFriendScreen = ({ navigation, route }) => {
   const { friend, onUpdate, onUpdateImage } = route.params;
-  const [firstName, setFirstName] = useState(friend.firstName);
-  const [lastName, setLastName] = useState(friend.lastName);
+  const [firstname, setFirstName] = useState(friend.firstname);
+  const [lastname, setLastName] = useState(friend.lastname);
   const [birthday, setBirthday] = useState(new Date(friend.birthday));
-  const [imageUrl, setImageUrl] = useState(friend.imageUrl);
+  const [profileImg, setProfileImg] = useState(friend.profileImg);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempBirthday, setTempBirthday] = useState(birthday);
 
-  const initials = `${firstName[0]}${lastName[0]}`.toUpperCase();
+  const initials = `${firstname[0]}${lastname[0]}`.toUpperCase();
 
   const isSaveDisabled =
-    firstName === friend.firstName &&
-    lastName === friend.lastName &&
+    firstname === friend.firstname &&
+    lastname === friend.lastname &&
     birthday.getTime() === new Date(friend.birthday).getTime();
 
   const onSave = () => {
     onUpdate({
       ...friend,
-      firstName,
-      lastName,
-      birthday: birthday.toLocaleDateString("en-CA"), 
-      imageUrl,
+      firstname,
+      lastname,
+      birthday: birthday.toLocaleDateString("en-CA"),
+      profileImg,
     });
     navigation.goBack();
   };
@@ -105,22 +106,61 @@ export const EditFriendScreen = ({ navigation, route }) => {
 
   const handlePickerResult = (pickerResult) => {
     if (pickerResult.cancelled) return;
+    const asset = pickerResult.assets && pickerResult.assets[0];
+    if (!asset) {
+      console.error("No assets in picker result");
+      return;
+    }
 
-    setTimeout(() => {
-      const simulatedUrl = pickerResult.uri;
-      setImageUrl(simulatedUrl);
-      onUpdateImage({
-        id: friend.id,
-        imageUrl: simulatedUrl,
-      });
-    }, 1000);
+    const uriParts = asset.uri.split("/");
+    const fileName = asset.fileName || uriParts[uriParts.length - 1];
+    const fileType = asset.mimeType || "image/jpeg";
+
+    const file = {
+      uri: asset.uri,
+      name: fileName,
+      type: fileType,
+    };
+
+    handleUpdateImage(friend.id, file);
+  };
+
+  const handleUpdateImage = async (friendId, file) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(
+        `${API_BASE}/recipient/${friendId}/profile-picture`,
+        {
+          method: "PATCH",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data != null) {
+        setProfileImg(data.profileImgUrl);
+        onUpdateImage(data.id, data.profileImgUrl);
+      }
+    } catch (error) {
+      console.error("Error uploading profile picture:", error);
+    }
+    s;
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.imageWrapper}>
-        {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.image} />
+        {profileImg ? (
+          <Image
+            source={{ uri: `${API_BASE}/profilePicture/${profileImg}` }}
+            style={styles.image}
+          />
         ) : (
           <View style={styles.initialsContainer}>
             <Text style={styles.initialsText}>{initials}</Text>
@@ -135,13 +175,13 @@ export const EditFriendScreen = ({ navigation, route }) => {
       <View style={styles.form}>
         <TextInput
           style={styles.input}
-          value={firstName}
+          value={firstname}
           onChangeText={setFirstName}
           placeholder="Firstname"
         />
         <TextInput
           style={styles.input}
-          value={lastName}
+          value={lastname}
           onChangeText={setLastName}
           placeholder="Lastname"
         />
@@ -150,7 +190,9 @@ export const EditFriendScreen = ({ navigation, route }) => {
           onPress={() => setShowDatePicker(true)}
           style={styles.datePickerButton}
         >
-          <Text style={styles.dateText}>{birthday.toLocaleDateString("en-GB")}</Text>
+          <Text style={styles.dateText}>
+            {birthday.toLocaleDateString("en-GB")}
+          </Text>
         </TouchableOpacity>
 
         {showDatePicker && (

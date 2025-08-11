@@ -12,13 +12,32 @@ import { FriendCard } from "../components/FriendCard";
 import { SearchBar } from "react-native-elements";
 import Icon from "react-native-vector-icons/Ionicons";
 import { ROUTES } from "../constants";
+import { API_BASE } from "../config";
 
 export const HomeScreen = ({ navigation }) => {
   const [search, setSearch] = useState("");
-  const [friends, setFriends] = useState(initialFriends);
-  const [filteredFriends, setFilteredFriends] = useState(initialFriends);
+  const [friends, setFriends] = useState([]);
+  const [filteredFriends, setFilteredFriends] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const currentlyOpenSwipeableRef = useRef(null);
+
+  const fetchFriends = () => {
+    fetch(`${API_BASE}/recipient`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Status: ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        setFriends(data);
+        setFilteredFriends(data);
+      })
+      .catch((err) => console.error("Error loading friends:", err))
+      .finally(() => setRefreshing(false));
+  };
+
+  useEffect(() => {
+    fetchFriends();
+  }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -28,33 +47,46 @@ export const HomeScreen = ({ navigation }) => {
       currentlyOpenSwipeableRef.current = null;
     }
 
-    // this is where I will call api for getting friends - refreshing
-    setTimeout(() => {
-      setFriends((prevFriends) => [...prevFriends]);
-      setRefreshing(false);
-    }, 1000);
+    fetchFriends();
   };
 
   useEffect(() => {
+    if (!friends) return;
     const filtered = friends.filter((friend) => {
-      const fullName = (friend.firstName + " " + friend.lastName).toLowerCase();
+      if (!friend) return false;
+
+      const first = friend.firstname ?? "";
+      const last = friend.lastname ?? "";
+      if (first.trim() === "" && last.trim() === "") return false;
+
+      const fullName = (first + " " + last).toLowerCase();
       return fullName.includes(search.toLowerCase());
     });
     setFilteredFriends(filtered);
   }, [search, friends]);
 
   const handleUpdateFriend = (updatedFriend) => {
-    console.log(updatedFriend);
-    setFriends((prev) =>
-      prev.map((f) => (f.id === updatedFriend.id ? updatedFriend : f))
-    );
+    fetch(`${API_BASE}/recipient`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedFriend),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Status: ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        // fetchFriends();
+        setFriends((prev) => prev.map((f) => (f.id === data.id ? data : f)));
+      })
+      .catch((err) => console.error("Error updating friend:", err));
   };
 
-  const handleUpdateImage = (friendId, newImageUrl) => {
-    console.log(friendId);
-    console.log(newImageUrl);
+  const handleUpdateImage = (friendId, newUrl) => {
     setFriends((prev) =>
-      prev.map((f) => (f.id === friendId ? { ...f, imageUrl: newImageUrl } : f))
+      prev.map((f) => (f.id === friendId ? { ...f, profileImg: newUrl } : f))
     );
   };
 
@@ -88,10 +120,10 @@ export const HomeScreen = ({ navigation }) => {
     setTimeout(() => {
       const newFriendFromBackend = {
         id: Date.now().toString(),
-        firstName: friendData.firstName,
-        lastName: friendData.lastName,
+        firstname: friendData.firstname,
+        lastname: friendData.lastname,
         birthday: friendData.birthday,
-        imageUrl: "https://picsum.photos/200", 
+        profileImg: "https://picsum.photos/200",
       };
       setFriends((prev) => [...prev, newFriendFromBackend]);
     }, 1000);

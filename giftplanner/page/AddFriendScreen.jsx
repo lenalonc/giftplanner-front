@@ -17,21 +17,21 @@ import * as ImagePicker from "expo-image-picker";
 
 export const AddFriendScreen = ({ navigation, route }) => {
   const { onAdd } = route.params;
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [firstname, setFirstName] = useState("");
+  const [lastname, setLastName] = useState("");
   const [birthday, setBirthday] = useState(new Date());
   const [file, setFile] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempBirthday, setTempBirthday] = useState(birthday);
 
-  const initials = `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
+  const initials = `${firstname[0] || ""}${lastname[0] || ""}`.toUpperCase();
 
-  const isSaveDisabled = !firstName.trim() || !lastName.trim() || !birthday;
+  const isSaveDisabled = !firstname.trim() || !lastname.trim() || !birthday;
 
   const onSave = () => {
     onAdd({
-      firstName,
-      lastName,
+      firstname,
+      lastname,
       birthday: birthday.toLocaleDateString("en-CA"),
       file, 
     });
@@ -109,13 +109,13 @@ export const AddFriendScreen = ({ navigation, route }) => {
       <View style={styles.form}>
         <TextInput
           style={styles.input}
-          value={firstName}
+          value={firstname}
           onChangeText={setFirstName}
           placeholder="Firstname"
         />
         <TextInput
           style={styles.input}
-          value={lastName}
+          value={lastname}
           onChangeText={setLastName}
           placeholder="Lastname"
         />
