@@ -1,16 +1,39 @@
-import { useState, useEffect } from "react";
-import { View, FlatList, StyleSheet, Platform } from "react-native";
+import { useState, useEffect, useRef } from "react";
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  Platform,
+  TouchableOpacity,
+  Text,
+} from "react-native";
 import { friends as initialFriends } from "../data/friends";
 import { FriendCard } from "../components/FriendCard";
 import { SearchBar } from "react-native-elements";
 import Icon from "react-native-vector-icons/Ionicons";
-import { TouchableOpacity } from "react-native";
 import { ROUTES } from "../constants";
 
 export const HomeScreen = ({ navigation }) => {
   const [search, setSearch] = useState("");
   const [friends, setFriends] = useState(initialFriends);
   const [filteredFriends, setFilteredFriends] = useState(initialFriends);
+  const [refreshing, setRefreshing] = useState(false);
+  const currentlyOpenSwipeableRef = useRef(null);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+
+    if (currentlyOpenSwipeableRef.current) {
+      currentlyOpenSwipeableRef.current.close();
+      currentlyOpenSwipeableRef.current = null;
+    }
+
+    // this is where I will call api for getting friends - refreshing
+    setTimeout(() => {
+      setFriends((prevFriends) => [...prevFriends]);
+      setRefreshing(false);
+    }, 1000);
+  };
 
   useEffect(() => {
     const filtered = friends.filter((friend) => {
@@ -20,7 +43,6 @@ export const HomeScreen = ({ navigation }) => {
     setFilteredFriends(filtered);
   }, [search, friends]);
 
-  // Kad se sacuvaju izmene u EditFriendScreen, dobijemo updatedFriend i update-ujemo listu
   const handleUpdateFriend = (updatedFriend) => {
     console.log(updatedFriend);
     setFriends((prev) =>
@@ -36,7 +58,6 @@ export const HomeScreen = ({ navigation }) => {
     );
   };
 
-  // Poziva se na dugom pritisku kartice
   const handleEdit = (friend) => {
     if (!friend) return;
 
@@ -51,36 +72,82 @@ export const HomeScreen = ({ navigation }) => {
     setFriends((prev) => prev.filter((friend) => friend.id !== id));
   };
 
+  //when we slide left with one card, if the other is moved to the left it will go back to normal
+  const handleSwipeableOpen = (swipeableRef) => {
+    if (
+      currentlyOpenSwipeableRef.current &&
+      currentlyOpenSwipeableRef.current !== swipeableRef.current
+    ) {
+      currentlyOpenSwipeableRef.current.close();
+    }
+    currentlyOpenSwipeableRef.current = swipeableRef.current;
+  };
+
+  const handleAddFriend = (friendData) => {
+    // simulating backend call
+    setTimeout(() => {
+      const newFriendFromBackend = {
+        id: Date.now().toString(),
+        firstName: friendData.firstName,
+        lastName: friendData.lastName,
+        birthday: friendData.birthday,
+        imageUrl: "https://picsum.photos/200", 
+      };
+      setFriends((prev) => [...prev, newFriendFromBackend]);
+    }, 1000);
+  };
+
   return (
     <View style={styles.container}>
-      <SearchBar
-        placeholder="Search..."
-        onChangeText={setSearch}
-        value={search}
-        platform={Platform.OS}
-        lightTheme
-        round
-        containerStyle={styles.searchContainer}
-        inputContainerStyle={styles.searchInputContainer}
-        inputStyle={styles.searchInput}
-        searchIcon={<Icon name="search" size={20} color="#888" />}
-        clearIcon={
-          <TouchableOpacity onPress={() => setSearch("")}>
-            <Icon name="close-circle" size={20} color="#888" />
-          </TouchableOpacity>
-        }
-        onClear={() => setSearch("")}
-        showCancel={true}
-        onCancel={() => setSearch("")}
-      />
+      <View style={styles.topRow}>
+        <SearchBar
+          placeholder="Search..."
+          onChangeText={setSearch}
+          value={search}
+          platform={Platform.OS}
+          lightTheme
+          round
+          containerStyle={styles.searchContainerRow}
+          inputContainerStyle={styles.searchInputContainer}
+          inputStyle={styles.searchInput}
+          searchIcon={<Icon name="search" size={20} color="#888" />}
+          clearIcon={
+            <TouchableOpacity onPress={() => setSearch("")}>
+              <Icon name="close-circle" size={20} color="#888" />
+            </TouchableOpacity>
+          }
+          onClear={() => setSearch("")}
+          showCancel={true}
+          onCancel={() => setSearch("")}
+        />
+
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate(ROUTES.FRIEND_ADD, {
+              onAdd: handleAddFriend,
+            })
+          }
+          style={styles.simplePlusContainer}
+        >
+          <Icon name="add" size={30} color="#007AFF" />
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         data={filteredFriends}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <FriendCard friend={item} onLongPress={handleEdit} />
+          <FriendCard
+            friend={item}
+            onLongPress={handleEdit}
+            onDelete={handleDeleteFriend}
+            onSwipeableOpen={handleSwipeableOpen}
+          />
         )}
         contentContainerStyle={{ paddingVertical: 12 }}
         keyboardShouldPersistTaps="handled"
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
     </View>
   );
@@ -103,5 +170,23 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     width: "100%",
     alignSelf: "center",
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 5,
+    paddingVertical: 3,
+    backgroundColor: "#f0f0f0",
+  },
+  searchContainerRow: {
+    flex: 1,
+    backgroundColor: "transparent",
+    borderBottomWidth: 0,
+    borderTopWidth: 0,
+    padding: 0,
+    marginRight: 8,
+  },
+  plusButton: {
+    paddingHorizontal: 6,
   },
 });

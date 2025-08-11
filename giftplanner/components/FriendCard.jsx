@@ -1,54 +1,109 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity, Animated } from "react-native";
-import { Swipeable } from "react-native-gesture-handler";
-import { Ionicons as Icon } from '@expo/vector-icons';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Alert,
+} from "react-native";
+import {
+  GestureHandlerRootView,
+  Swipeable,
+} from "react-native-gesture-handler";
+import { Ionicons as Icon } from "@expo/vector-icons";
+import { useRef } from "react";
 
-export const FriendCard = ({ friend, onLongPress }) => {
+export const FriendCard = ({
+  friend,
+  onLongPress,
+  onDelete,
+  onSwipeableOpen,
+}) => {
   const initials = `${friend.firstName[0]}${friend.lastName[0]}`.toUpperCase();
+  const swipeableRef = useRef(null);
 
   const renderRightActions = (progress, dragX) => {
-    const scale = dragX.interpolate({
-      inputRange: [-100, 0],
-      outputRange: [1, 0],
+    const maxSwipe = 80;
+
+    const translateX = dragX.interpolate({
+      inputRange: [-maxSwipe, 0],
+      outputRange: [0, maxSwipe],
       extrapolate: "clamp",
     });
 
+    const confirmDelete = () => {
+      Alert.alert(
+        "Confirm Delete",
+        "You will delete this item. Are you sure?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => {
+              swipeableRef.current?.close();
+            },
+          },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () => onDelete(friend.id),
+          },
+        ],
+        { cancelable: true }
+      );
+    };
+
     return (
-      <TouchableOpacity
-        onPress={() => onDelete(friend.id)}
-        style={styles.deleteButton}
-      >
-        <Animated.Text style={[styles.deleteText, { transform: [{ scale }] }]}>
-          <Icon name="trash" size={24} color="white" />
-        </Animated.Text>
-      </TouchableOpacity>
+      <Animated.View style={{ transform: [{ translateX }] }}>
+        <TouchableOpacity
+          onPress={confirmDelete} //confirm delete, cancel option
+          style={[styles.deleteButton, { width: maxSwipe }]}
+        >
+          <Icon name="trash" size={24} color="red" />
+        </TouchableOpacity>
+      </Animated.View>
     );
   };
 
-  return (
-    <Swipeable renderRightActions={renderRightActions}>
-      <TouchableOpacity
-        style={styles.card}
-        onLongPress={() => onLongPress(friend)}
-        activeOpacity={0.7}
-      >
-        {friend.imageUrl ? (
-          <Image source={{ uri: friend.imageUrl }} style={styles.image} />
-        ) : (
-          <View style={styles.initialsContainer}>
-            <Text style={styles.initialsText}>{initials}</Text>
-          </View>
-        )}
+  const handleSwipeableWillOpen = () => {
+    if (onSwipeableOpen) {
+      onSwipeableOpen(swipeableRef);
+    }
+  };
 
-        <View style={styles.textContainer}>
-          <Text style={styles.name}>
-            {friend.firstName} {friend.lastName}
-          </Text>
-          <Text style={styles.birthday}>
-            Rođendan: {new Date(friend.birthday).toLocaleDateString()}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    </Swipeable>
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Swipeable
+        ref={swipeableRef}
+        renderRightActions={renderRightActions}
+        rightThreshold={20}
+        onSwipeableWillOpen={handleSwipeableWillOpen}
+      >
+        <TouchableOpacity
+          style={styles.card}
+          onLongPress={() => onLongPress(friend)}
+          activeOpacity={0.7}
+        >
+          {friend.imageUrl ? (
+            <Image source={{ uri: friend.imageUrl }} style={styles.image} />
+          ) : (
+            <View style={styles.initialsContainer}>
+              <Text style={styles.initialsText}>{initials}</Text>
+            </View>
+          )}
+
+          <View style={styles.textContainer}>
+            <Text style={styles.name}>
+              {friend.firstName} {friend.lastName}
+            </Text>
+            <Text style={styles.birthday}>
+              Birthday: {new Date(friend.birthday).toLocaleDateString("en-GB")}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </Swipeable>
+    </GestureHandlerRootView>
   );
 };
 
@@ -96,5 +151,10 @@ const styles = StyleSheet.create({
   birthday: {
     color: "#666",
     marginTop: 4,
+  },
+  deleteButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100%", 
   },
 });
