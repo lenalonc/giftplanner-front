@@ -57,51 +57,71 @@ export const EditFriendScreen = ({ navigation, route }) => {
   };
 
   const onEditImage = async () => {
-    Alert.alert(
-      "Change Profile Picture",
-      "Choose an option",
-      [
-        {
-          text: "Take Photo",
-          onPress: async () => {
-            const cameraPerm =
-              await ImagePicker.requestCameraPermissionsAsync();
-            if (!cameraPerm.granted) {
-              alert("Camera permission is required!");
-              return;
-            }
-            const result = await ImagePicker.launchCameraAsync({
-              allowsEditing: true,
-              aspect: [1, 1],
-              quality: 0.7,
-            });
-            handlePickerResult(result);
-          },
+    const options = [
+      {
+        text: "Take Photo",
+        onPress: async () => {
+          const cameraPerm = await ImagePicker.requestCameraPermissionsAsync();
+          if (!cameraPerm.granted) {
+            alert("Camera permission is required!");
+            return;
+          }
+          const result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.7,
+          });
+          handlePickerResult(result);
         },
-        {
-          text: "Choose from Gallery",
-          onPress: async () => {
-            const galleryPerm =
-              await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (!galleryPerm.granted) {
-              alert("Gallery permission is required!");
-              return;
-            }
-            const result = await ImagePicker.launchImageLibraryAsync({
-              allowsEditing: true,
-              aspect: [1, 1],
-              quality: 0.7,
-            });
-            handlePickerResult(result);
-          },
+      },
+      {
+        text: "Choose from Gallery",
+        onPress: async () => {
+          const galleryPerm =
+            await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (!galleryPerm.granted) {
+            alert("Gallery permission is required!");
+            return;
+          }
+          const result = await ImagePicker.launchImageLibraryAsync({
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.7,
+          });
+          handlePickerResult(result);
         },
-        {
-          text: "Cancel",
-          style: "cancel",
+      },
+    ];
+
+    if (profileImg) {
+      options.push({
+        text: "Remove Photo",
+        style: "destructive",
+        onPress: () => {
+          Alert.alert(
+            "Confirm Delete",
+            "Are you sure you want to remove the profile picture?",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Delete",
+                style: "destructive",
+                onPress: () => {
+                  handleDeleteImage(friend.id);
+                },
+              },
+            ],
+            { cancelable: true }
+          );
         },
-      ],
-      { cancelable: true }
-    );
+      });
+    }
+
+    options.push({ text: "Cancel", style: "cancel" });
+
+    Alert.alert("Change Profile Picture", "Choose an option", options, {
+      cancelable: true,
+    });
   };
 
   const handlePickerResult = (pickerResult) => {
@@ -150,7 +170,26 @@ export const EditFriendScreen = ({ navigation, route }) => {
     } catch (error) {
       console.error("Error uploading profile picture:", error);
     }
-    s;
+  };
+
+  const handleDeleteImage = async (friendId) => {
+    try {
+      const response = await fetch(
+        `${API_BASE}/recipient/${friendId}/profile-picture-delete`,
+        {
+          method: "PATCH",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Status: ${response.status}`);
+      }
+
+      setProfileImg(null);
+      onUpdateImage(friendId, null);
+    } catch (error) {
+      console.error("Error deleting profile picture:", error);
+    }
   };
 
   return (

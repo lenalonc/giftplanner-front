@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Text,
 } from "react-native";
-import { friends as initialFriends } from "../data/friends";
 import { FriendCard } from "../components/FriendCard";
 import { SearchBar } from "react-native-elements";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -100,8 +99,21 @@ export const HomeScreen = ({ navigation }) => {
     });
   };
 
-  const handleDeleteFriend = (id) => {
+  const handleDeleteFriend = async (id) => {
     setFriends((prev) => prev.filter((friend) => friend.id !== id));
+    try {
+      const response = await fetch(`${API_BASE}/recipient/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete friend");
+      }
+
+      setFriends((prev) => prev.filter((friend) => friend.id !== id));
+    } catch (error) {
+      console.error("Error occured while deleting a friend:", error);
+    }
   };
 
   //when we slide left with one card, if the other is moved to the left it will go back to normal
@@ -116,17 +128,7 @@ export const HomeScreen = ({ navigation }) => {
   };
 
   const handleAddFriend = (friendData) => {
-    // simulating backend call
-    setTimeout(() => {
-      const newFriendFromBackend = {
-        id: Date.now().toString(),
-        firstname: friendData.firstname,
-        lastname: friendData.lastname,
-        birthday: friendData.birthday,
-        profileImg: "https://picsum.photos/200",
-      };
-      setFriends((prev) => [...prev, newFriendFromBackend]);
-    }, 1000);
+    setFriends((prevFriends) => [...prevFriends, friendData]);
   };
 
   return (

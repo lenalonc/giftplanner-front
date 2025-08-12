@@ -14,6 +14,7 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Icon from "react-native-vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";
+import { API_BASE } from "../config";
 
 export const AddFriendScreen = ({ navigation, route }) => {
   const { onAdd } = route.params;
@@ -26,16 +27,37 @@ export const AddFriendScreen = ({ navigation, route }) => {
 
   const initials = `${firstname[0] || ""}${lastname[0] || ""}`.toUpperCase();
 
-  const isSaveDisabled = !firstname.trim() || !lastname.trim() || !birthday;
+  const isSaveDisabled = (!firstname.trim() && !lastname.trim()) || !birthday;
 
-  const onSave = () => {
-    onAdd({
-      firstname,
-      lastname,
-      birthday: birthday.toLocaleDateString("en-CA"),
-      file, 
-    });
-    navigation.goBack();
+  const onSave = async () => {
+    const formData = new FormData();
+    formData.append("firstname", firstname);
+    formData.append("lastname", lastname);
+    formData.append("birthday", birthday.toLocaleDateString("en-CA"));
+
+    if (file) {
+      formData.append("file", file);
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/recipient`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data != null) {
+        onAdd(data);
+        navigation.goBack();
+      }
+    } catch (error) {
+      console.error("Error saving new friend:", error);
+    }
   };
 
   const onChangeDate = (event, selectedDate) => {
@@ -48,7 +70,7 @@ export const AddFriendScreen = ({ navigation, route }) => {
   };
 
   const onPickImage = async () => {
-    Alert.alert("Profile Picture", "Choose an option", [
+    const options = [
       {
         text: "Take Photo",
         onPress: async () => {
@@ -82,13 +104,58 @@ export const AddFriendScreen = ({ navigation, route }) => {
           handlePickerResult(result);
         },
       },
-      { text: "Cancel", style: "cancel" },
-    ]);
+    ];
+
+    if (file) {
+      options.push({
+        text: "Remove Photo",
+        style: "destructive",
+        onPress: () => {
+          Alert.alert(
+            "Confirm Delete",
+            "Are you sure you want to remove the profile picture?",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Delete",
+                style: "destructive",
+                onPress: () => {
+                  setFile(null);
+                },
+              },
+            ],
+            { cancelable: true }
+          );
+        },
+      });
+    }
+
+    options.push({ text: "Cancel", style: "cancel" });
+
+    Alert.alert("Change Profile Picture", "Choose an option", options, {
+      cancelable: true,
+    });
   };
 
   const handlePickerResult = (pickerResult) => {
     if (pickerResult.cancelled) return;
-    setFile(pickerResult);
+    const asset = pickerResult.assets && pickerResult.assets[0];
+    if (!asset) {
+      console.error("No assets in picker result");
+      return;
+    }
+
+    const uriParts = asset.uri.split("/");
+    const fileName = asset.fileName || uriParts[uriParts.length - 1];
+    const fileType = asset.mimeType || "image/jpeg";
+
+    const file = {
+      uri: asset.uri,
+      name: fileName,
+      type: fileType,
+    };
+
+    setFile(file);
   };
 
   return (
@@ -124,7 +191,9 @@ export const AddFriendScreen = ({ navigation, route }) => {
           onPress={() => setShowDatePicker(true)}
           style={styles.datePickerButton}
         >
-          <Text style={styles.dateText}>{birthday.toLocaleDateString("en-GB")}</Text>
+          <Text style={styles.dateText}>
+            {birthday.toLocaleDateString("en-GB")}
+          </Text>
         </TouchableOpacity>
 
         {showDatePicker && (
