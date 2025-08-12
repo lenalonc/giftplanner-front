@@ -13,6 +13,7 @@ import {
 } from "react-native-gesture-handler";
 import { Ionicons as Icon } from "@expo/vector-icons";
 import { useRef } from "react";
+import { API_BASE } from "../config";
 
 export const FriendCard = ({
   friend,
@@ -20,7 +21,7 @@ export const FriendCard = ({
   onDelete,
   onSwipeableOpen,
 }) => {
-  const initials = `${friend.firstName[0]}${friend.lastName[0]}`.toUpperCase();
+  const initials = `${friend.firstname[0]}${friend.lastname[0]}`.toUpperCase();
   const swipeableRef = useRef(null);
 
   const renderRightActions = (progress, dragX) => {
@@ -85,8 +86,13 @@ export const FriendCard = ({
           onLongPress={() => onLongPress(friend)}
           activeOpacity={0.7}
         >
-          {friend.imageUrl ? (
-            <Image source={{ uri: friend.imageUrl }} style={styles.image} />
+          {friend.profileImg ? (
+            <Image
+              source={{
+                uri: `${API_BASE}/profilePicture/${friend.profileImg}`,
+              }}
+              style={styles.image}
+            />
           ) : (
             <View style={styles.initialsContainer}>
               <Text style={styles.initialsText}>{initials}</Text>
@@ -95,7 +101,7 @@ export const FriendCard = ({
 
           <View style={styles.textContainer}>
             <Text style={styles.name}>
-              {friend.firstName} {friend.lastName}
+              {friend.firstname} {friend.lastname}
             </Text>
             <Text style={styles.birthday}>
               Birthday: {new Date(friend.birthday).toLocaleDateString("en-GB")}
@@ -155,6 +161,6 @@ const styles = StyleSheet.create({
   deleteButton: {
     justifyContent: "center",
     alignItems: "center",
-    height: "100%", 
+    height: "100%",
   },
 });
