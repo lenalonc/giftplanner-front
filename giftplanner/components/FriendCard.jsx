@@ -14,6 +14,8 @@ import {
 import { Ionicons as Icon } from "@expo/vector-icons";
 import { useRef } from "react";
 import { API_BASE } from "../config";
+import { useNavigation } from "@react-navigation/native";
+import { ROUTES } from "../constants";
 
 export const FriendCard = ({
   friend,
@@ -21,6 +23,7 @@ export const FriendCard = ({
   onDelete,
   onSwipeableOpen,
 }) => {
+  const navigation = useNavigation();
   const initials = `${friend.firstname[0]}${friend.lastname[0]}`.toUpperCase();
   const swipeableRef = useRef(null);
 
@@ -58,7 +61,7 @@ export const FriendCard = ({
     return (
       <Animated.View style={{ transform: [{ translateX }] }}>
         <TouchableOpacity
-          onPress={confirmDelete} //confirm delete, cancel option
+          onPress={confirmDelete}
           style={[styles.deleteButton, { width: maxSwipe }]}
         >
           <Icon name="trash" size={24} color="red" />
@@ -73,6 +76,10 @@ export const FriendCard = ({
     }
   };
 
+  const handlePress = () => {
+    navigation.navigate(ROUTES.GIFTS, { friendId: friend.id });
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Swipeable
@@ -85,6 +92,7 @@ export const FriendCard = ({
           style={styles.card}
           onLongPress={() => onLongPress(friend)}
           activeOpacity={0.7}
+          onPress={handlePress}
         >
           {friend.profileImg ? (
             <Image
