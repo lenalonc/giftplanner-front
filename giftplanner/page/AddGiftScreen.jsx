@@ -16,6 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import DropDownPicker from "react-native-dropdown-picker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { API_BASE } from "../config";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const AddGiftScreen = () => {
   const navigation = useNavigation();
@@ -176,9 +177,14 @@ export const AddGiftScreen = () => {
     }
 
     try {
+      const token = await AsyncStorage.getItem("token");
+
       const response = await fetch(`${API_BASE}/recipient/gift`, {
         method: "POST",
         body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {

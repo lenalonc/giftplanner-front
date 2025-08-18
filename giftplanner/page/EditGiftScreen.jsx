@@ -14,6 +14,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import DropDownPicker from "react-native-dropdown-picker";
 import * as ImagePicker from "expo-image-picker";
 import { API_BASE } from "../config";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const EditGiftScreen = ({ navigation, route }) => {
   const { gift, onUpdate } = route.params;
@@ -214,9 +215,14 @@ export const EditGiftScreen = ({ navigation, route }) => {
     if (file) formData.append("file", file);
 
     try {
+      const token = await AsyncStorage.getItem("token");
+
       const response = await fetch(`${API_BASE}/recipient/gift`, {
         method: "PUT",
         body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (!response.ok) throw new Error("Failed to update gift");
 

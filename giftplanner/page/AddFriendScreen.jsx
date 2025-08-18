@@ -15,6 +15,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import Icon from "react-native-vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";
 import { API_BASE } from "../config";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const AddFriendScreen = ({ navigation, route }) => {
   const { onAdd } = route.params;
@@ -40,9 +41,14 @@ export const AddFriendScreen = ({ navigation, route }) => {
     }
 
     try {
+      const token = await AsyncStorage.getItem("token");
+
       const response = await fetch(`${API_BASE}/recipient`, {
         method: "POST",
         body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {

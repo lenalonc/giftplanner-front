@@ -8,12 +8,24 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AddFriendScreen } from "./page/AddFriendScreen.jsx";
 import { AddGiftScreen } from "./page/AddGiftScreen.jsx";
 import { EditGiftScreen } from "./page/EditGiftScreen.jsx";
+import { LoginScreen } from "./page/LoginScreen.jsx";
+import { RegisterScreen } from "./page/RegisterScreen.jsx";
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName={ROUTES.HOME}>
+      <Stack.Navigator initialRouteName={ROUTES.LOGIN}>
+        <Stack.Screen
+          name={ROUTES.LOGIN}
+          component={LoginScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTES.REGISTER}
+          component={RegisterScreen}
+          options={{ title: "" }}
+        />
         <Stack.Screen name={ROUTES.HOME} component={HomeScreen} />
         <Stack.Screen name={ROUTES.GIFTS} component={GiftsScreen} />
         <Stack.Screen

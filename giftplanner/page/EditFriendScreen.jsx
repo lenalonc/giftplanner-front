@@ -15,6 +15,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import Icon from "react-native-vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";
 import { API_BASE } from "../config";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const EditFriendScreen = ({ navigation, route }) => {
   const { friend, onUpdate, onUpdateImage } = route.params;
@@ -149,12 +150,16 @@ export const EditFriendScreen = ({ navigation, route }) => {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      const token = await AsyncStorage.getItem("token");
 
       const response = await fetch(
         `${API_BASE}/recipient/${friendId}/profile-picture`,
         {
           method: "PATCH",
           body: formData,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
@@ -174,10 +179,15 @@ export const EditFriendScreen = ({ navigation, route }) => {
 
   const handleDeleteImage = async (friendId) => {
     try {
+      const token = await AsyncStorage.getItem("token");
+
       const response = await fetch(
         `${API_BASE}/recipient/${friendId}/profile-picture-delete`,
         {
           method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
