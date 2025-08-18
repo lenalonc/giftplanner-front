@@ -100,7 +100,6 @@ export const HomeScreen = ({ navigation }) => {
   };
 
   const handleDeleteFriend = async (id) => {
-    setFriends((prev) => prev.filter((friend) => friend.id !== id));
     try {
       const response = await fetch(`${API_BASE}/recipient/${id}`, {
         method: "DELETE",
@@ -116,7 +115,6 @@ export const HomeScreen = ({ navigation }) => {
     }
   };
 
-  //when we slide left with one card, if the other is moved to the left it will go back to normal
   const handleSwipeableOpen = (swipeableRef) => {
     if (
       currentlyOpenSwipeableRef.current &&
