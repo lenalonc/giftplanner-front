@@ -13,6 +13,7 @@ import { API_BASE } from "../config";
 import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ROUTES } from "../constants";
+import * as Notifications from "expo-notifications";
 
 export const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState("");
@@ -35,21 +36,36 @@ export const LoginScreen = ({ navigation }) => {
       });
 
       if (!response.ok) {
-        throw new Error(`Login failed: ${response.status}`);
+        if (response.status === 404) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Login failed");
+        } else {
+          throw new Error("Incorrect password");
+        }
       }
 
       const data = await response.json();
       if (data?.token) {
         await AsyncStorage.setItem("token", data.token);
+        // const expoPushToken = await Notifications.getExpoPushTokenAsync();
+        // console.log(JSON.stringify({ expoPushToken: expoPushToken.data }));
+
+        // await fetch(`${API_BASE}/user/push-token`, {
+        //   method: "POST",
+        //   headers: {
+        //     Authorization: `Bearer ${data.token}`,
+        //     "Content-Type": "application/json",
+        //   },
+        //   body: JSON.stringify({ expoPushToken: expoPushToken.data }),
+        // });
 
         navigation.replace("Home");
       } else {
         Alert.alert("Error", "Token not received from server");
       }
-      
     } catch (err) {
-      console.error(err);
-      Alert.alert("Error", "Login failed. Check console for details.");
+      // console.error(err);
+      Alert.alert(err.message);
     } finally {
       setLoading(false);
     }

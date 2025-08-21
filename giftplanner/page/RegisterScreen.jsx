@@ -6,6 +6,7 @@ import {
   Text,
   StyleSheet,
   Image,
+  Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { API_BASE } from "../config";
@@ -18,9 +19,34 @@ export const RegisterScreen = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const hasGiftPNG = true;
+  const [errors, setErrors] = useState({
+    username: false,
+    email: false,
+    password: false,
+  });
+
+  const isValidEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
 
   const handleRegister = async () => {
+    const newErrors = {
+      username: !username,
+      email: !email || !isValidEmail(email),
+      password: !password,
+    };
+    setErrors(newErrors);
+
     if (!username || !email || !password) return;
+
+    if (!isValidEmail(email)) {
+      Alert.alert(
+        "Invalid email address",
+        "Please enter a valid email address"
+      );
+      return;
+    }
 
     setLoading(true);
     try {
@@ -30,8 +56,19 @@ export const RegisterScreen = ({ navigation }) => {
         body: JSON.stringify({ username, email, password }),
       });
 
-      if (!response.ok)
-        throw new Error(`Registration failed: ${response.status}`);
+      if (!response.ok) {
+        if (response.status === 400) {
+          const errorData = await response.json();
+          if (errorData && errorData.message) {
+            throw new Error(errorData.message || "Login failed");
+          } else {
+            throw new Error("Error occured during registration");
+          }
+        } else {
+          throw new Error("Error occured during registration");
+        }
+      }
+      // throw new Error(`Registration failed: ${response.status}`);
 
       const data = await response.json();
 
@@ -42,8 +79,7 @@ export const RegisterScreen = ({ navigation }) => {
         alert("Account created, but no token returned!");
       }
     } catch (err) {
-      console.error(err);
-      alert("Registration failed. Check console for details.");
+      alert(err.message);
     } finally {
       setLoading(false);
     }
@@ -65,14 +101,20 @@ export const RegisterScreen = ({ navigation }) => {
         </View>
 
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            errors.username && { borderColor: "red", borderWidth: 2 },
+          ]}
           placeholder="Username"
           value={username}
           onChangeText={setUsername}
           autoCapitalize="none"
         />
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            errors.email && { borderColor: "red", borderWidth: 2 },
+          ]}
           placeholder="Email"
           value={email}
           onChangeText={setEmail}
@@ -80,7 +122,10 @@ export const RegisterScreen = ({ navigation }) => {
           keyboardType="email-address"
         />
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            errors.password && { borderColor: "red", borderWidth: 2 },
+          ]}
           placeholder="Password"
           value={password}
           onChangeText={setPassword}

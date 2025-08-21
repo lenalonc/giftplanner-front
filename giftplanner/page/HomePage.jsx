@@ -6,6 +6,7 @@ import {
   Platform,
   TouchableOpacity,
   Text,
+  Alert,
 } from "react-native";
 import { FriendCard } from "../components/FriendCard";
 import { SearchBar } from "react-native-elements";
@@ -13,6 +14,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { ROUTES } from "../constants";
 import { API_BASE } from "../config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useLayoutEffect } from "react";
 
 export const HomeScreen = ({ navigation }) => {
   const [search, setSearch] = useState("");
@@ -92,7 +94,8 @@ export const HomeScreen = ({ navigation }) => {
       const data = await response.json();
       setFriends((prev) => prev.map((f) => (f.id === data.id ? data : f)));
     } catch (err) {
-      console.error("Error updating friend:", err);
+      // console.error("Error updating friend:", err);
+      Alert.alert("Error", "Error updating friend");
     }
   };
 
@@ -146,6 +149,47 @@ export const HomeScreen = ({ navigation }) => {
   const handleAddFriend = (friendData) => {
     setFriends((prevFriends) => [...prevFriends, friendData]);
   };
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem("token");
+      navigation.replace(ROUTES.LOGIN);
+    } catch (err) {
+      console.error("Error during logout:", err);
+    }
+  };
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          style={{ marginRight: 0}}
+          onPress={() =>
+            Alert.alert(
+              "Log out",
+              "Are you sure you want to log out?",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Log out",
+                  style: "destructive",
+                  onPress: handleLogout,
+                },
+              ],
+              { cancelable: true }
+            )
+          }
+        >
+          <Icon
+            name="exit-outline"
+            size={24}
+            color="#FF3B30"
+            style={{ transform: [{ scaleX: -1 }] }}
+          />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   return (
     <View style={styles.container}>

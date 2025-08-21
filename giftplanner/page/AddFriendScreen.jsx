@@ -31,11 +31,13 @@ export const AddFriendScreen = ({ navigation, route }) => {
   const isSaveDisabled = (!firstname.trim() && !lastname.trim()) || !birthday;
 
   const onSave = async () => {
+    if (!firstname && !lastname) {
+      return;
+    }
     const formData = new FormData();
-    formData.append("firstname", firstname);
-    formData.append("lastname", lastname);
+    formData.append("firstname", firstname.trim() || "");
+    formData.append("lastname", lastname.trim() || "");
     formData.append("birthday", birthday.toLocaleDateString("en-CA"));
-
     if (file) {
       formData.append("file", file);
     }
@@ -147,7 +149,6 @@ export const AddFriendScreen = ({ navigation, route }) => {
     if (pickerResult.cancelled) return;
     const asset = pickerResult.assets && pickerResult.assets[0];
     if (!asset) {
-      console.error("No assets in picker result");
       return;
     }
 

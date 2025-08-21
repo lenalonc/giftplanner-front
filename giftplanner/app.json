@@ -1,5 +1,6 @@
 {
   "expo": {
+    "owner": "lenalonc",
     "name": "myapp",
     "slug": "myapp",
     "version": "1.0.0",
@@ -13,7 +14,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lenalonc.myapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -24,6 +29,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "618e27fb-ddf1-4448-ae4a-af5a4cce0d11"
+      }
     }
   }
 }

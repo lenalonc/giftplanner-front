@@ -24,13 +24,14 @@ export const EditGiftScreen = ({ navigation, route }) => {
 
   const [origPrice, setOrigPrice] = useState(gift.price?.toString());
   const [origCurrency, setOrigCurrency] = useState(gift.currency);
-  const [origImgUrl, setOrigImgUrl] = useState(gift.imgUrl);
+  const [origImgUrl, setOrigImgUrl] = useState(gift.imageUrl);
 
   const [title, setTitle] = useState(origTitle);
   const [description, setDescription] = useState(origDescription);
   const [price, setPrice] = useState(origPrice);
   const [currency, setCurrency] = useState(origCurrency);
   const [file, setFile] = useState(null);
+  const[imgUrl, setImgUrl] = useState(origImgUrl);
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -43,6 +44,8 @@ export const EditGiftScreen = ({ navigation, route }) => {
     { label: "JPY", value: "JPY" },
     { label: "CHF", value: "CHF" },
   ]);
+
+  const isSaveDisabled = !title.trim();
 
   const confirmDiscard = (goBackAfterDiscard = false) => {
     Alert.alert(
@@ -60,6 +63,7 @@ export const EditGiftScreen = ({ navigation, route }) => {
             setCurrency(origCurrency);
             setFile(null);
             setIsEditing(false);
+            setImgUrl(origImgUrl);
 
             if (goBackAfterDiscard) {
               navigation.goBack();
@@ -165,7 +169,7 @@ export const EditGiftScreen = ({ navigation, route }) => {
                 style: "destructive",
                 onPress: () => {
                   setFile(null);
-                  setOrigImgUrl(null);
+                  setImgUrl(null);
                 },
               },
             ]
@@ -185,7 +189,6 @@ export const EditGiftScreen = ({ navigation, route }) => {
     if (pickerResult.cancelled) return;
     const asset = pickerResult.assets && pickerResult.assets[0];
     if (!asset) {
-      console.error("No assets in picker result");
       return;
     }
 
@@ -211,6 +214,7 @@ export const EditGiftScreen = ({ navigation, route }) => {
     }
 
     formData.append("currency", currency);
+    formData.append("deletedPhoto", imgUrl === null)
 
     if (file) formData.append("file", file);
 
@@ -314,9 +318,9 @@ export const EditGiftScreen = ({ navigation, route }) => {
       >
         {file ? (
           <Image source={{ uri: file.uri }} style={styles.image} />
-        ) : gift.imageUrl ? (
+        ) : imgUrl ? (
           <Image
-            source={{ uri: `${API_BASE}/giftPhoto/${gift.imageUrl}` }}
+            source={{ uri: `${API_BASE}/giftPhoto/${imgUrl}` }}
             style={styles.image}
           />
         ) : (
@@ -326,7 +330,7 @@ export const EditGiftScreen = ({ navigation, route }) => {
           </View>
         )}
 
-        {isEditing && (file || gift.imageUrl) && (
+        {isEditing && (file || origImgUrl) && (
           <View style={styles.editOverlay}>
             <Icon name="pencil" size={20} color="white" />
           </View>
@@ -334,7 +338,12 @@ export const EditGiftScreen = ({ navigation, route }) => {
       </TouchableOpacity>
 
       {isEditing && (
-        <Button title="Save Changes" onPress={handleSave} color="#007AFF" />
+        <Button
+          title="Save Changes"
+          onPress={handleSave}
+          color="#007AFF"
+          disabled={isSaveDisabled}
+        />
       )}
     </KeyboardAwareScrollView>
   );
@@ -358,11 +367,11 @@ const styles = StyleSheet.create({
   multiline: { height: 80, textAlignVertical: "top" },
   label: { fontSize: 14, fontWeight: "500", marginBottom: 5, color: "#333" },
   imageContainer: {
-    height: 200,
+    height: 380,
     borderRadius: 10,
     overflow: "hidden",
     backgroundColor: "#f0f0f0",
-    marginBottom: 20,
+    marginBottom: 10,
     justifyContent: "center",
     alignItems: "center",
   },

@@ -26,18 +26,18 @@ export const EditFriendScreen = ({ navigation, route }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempBirthday, setTempBirthday] = useState(birthday);
 
-  const initials = `${firstname[0]}${lastname[0]}`.toUpperCase();
+  const initials = `${firstname[0] || ""}${lastname[0] || ""}`.toUpperCase();
 
   const isSaveDisabled =
-    firstname === friend.firstname &&
+    (firstname === friend.firstname &&
     lastname === friend.lastname &&
-    birthday.getTime() === new Date(friend.birthday).getTime();
+    birthday.getTime() === new Date(friend.birthday).getTime()) || (firstname === "" && lastname === "");
 
   const onSave = () => {
     onUpdate({
       ...friend,
-      firstname,
-      lastname,
+      firstname: firstname !== null ? firstname : "",
+      lastname : lastname != null ? lastname : "",
       birthday: birthday.toLocaleDateString("en-CA"),
       profileImg,
     });
@@ -129,7 +129,6 @@ export const EditFriendScreen = ({ navigation, route }) => {
     if (pickerResult.cancelled) return;
     const asset = pickerResult.assets && pickerResult.assets[0];
     if (!asset) {
-      console.error("No assets in picker result");
       return;
     }
 

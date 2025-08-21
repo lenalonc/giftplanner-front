@@ -44,7 +44,6 @@ export const AddGiftScreen = () => {
     title.trim() ||
     description.trim() ||
     price ||
-    currency ||
     file
   );
 
@@ -149,7 +148,6 @@ export const AddGiftScreen = () => {
     if (pickerResult.cancelled) return;
     const asset = pickerResult.assets && pickerResult.assets[0];
     if (!asset) {
-      console.error("No assets in picker result");
       return;
     }
 
@@ -313,7 +311,7 @@ const styles = StyleSheet.create({
   multiline: { height: 80, textAlignVertical: "top" },
   label: { fontSize: 14, fontWeight: "500", marginBottom: 5, color: "#333" },
   imageContainer: {
-    height: 200,
+    height: 380,
     borderRadius: 10,
     overflow: "hidden",
     backgroundColor: "#f0f0f0",
