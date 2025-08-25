@@ -5,4 +5,6 @@ export const ROUTES = {
   FRIEND_ADD: "AddFriend",
   GIFT_ADD: "AddGift",
   GIFT_EDIT: "EditGift",
+  LOGIN: "Login",
+  REGISTER: "Register",
 };

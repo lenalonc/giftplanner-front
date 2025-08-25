@@ -16,6 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import DropDownPicker from "react-native-dropdown-picker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { API_BASE } from "../config";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const AddGiftScreen = () => {
   const navigation = useNavigation();
@@ -43,7 +44,6 @@ export const AddGiftScreen = () => {
     title.trim() ||
     description.trim() ||
     price ||
-    currency ||
     file
   );
 
@@ -148,7 +148,6 @@ export const AddGiftScreen = () => {
     if (pickerResult.cancelled) return;
     const asset = pickerResult.assets && pickerResult.assets[0];
     if (!asset) {
-      console.error("No assets in picker result");
       return;
     }
 
@@ -176,9 +175,14 @@ export const AddGiftScreen = () => {
     }
 
     try {
+      const token = await AsyncStorage.getItem("token");
+
       const response = await fetch(`${API_BASE}/recipient/gift`, {
         method: "POST",
         body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
@@ -307,7 +311,7 @@ const styles = StyleSheet.create({
   multiline: { height: 80, textAlignVertical: "top" },
   label: { fontSize: 14, fontWeight: "500", marginBottom: 5, color: "#333" },
   imageContainer: {
-    height: 200,
+    height: 380,
     borderRadius: 10,
     overflow: "hidden",
     backgroundColor: "#f0f0f0",

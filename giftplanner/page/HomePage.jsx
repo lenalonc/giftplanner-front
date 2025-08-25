@@ -6,12 +6,15 @@ import {
   Platform,
   TouchableOpacity,
   Text,
+  Alert,
 } from "react-native";
 import { FriendCard } from "../components/FriendCard";
 import { SearchBar } from "react-native-elements";
 import Icon from "react-native-vector-icons/Ionicons";
 import { ROUTES } from "../constants";
 import { API_BASE } from "../config";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useLayoutEffect } from "react";
 
 export const HomeScreen = ({ navigation }) => {
   const [search, setSearch] = useState("");
@@ -20,18 +23,27 @@ export const HomeScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const currentlyOpenSwipeableRef = useRef(null);
 
-  const fetchFriends = () => {
-    fetch(`${API_BASE}/recipient`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`Status: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        setFriends(data);
-        setFilteredFriends(data);
-      })
-      .catch((err) => console.error("Error loading friends:", err))
-      .finally(() => setRefreshing(false));
+  const fetchFriends = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+
+      const response = await fetch(`${API_BASE}/recipient`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error(`Status: ${response.status}`);
+
+      const data = await response.json();
+      setFriends(data);
+      setFilteredFriends(data);
+    } catch (err) {
+      console.error("Error loading friends:", err);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   useEffect(() => {
@@ -64,23 +76,27 @@ export const HomeScreen = ({ navigation }) => {
     setFilteredFriends(filtered);
   }, [search, friends]);
 
-  const handleUpdateFriend = (updatedFriend) => {
-    fetch(`${API_BASE}/recipient`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updatedFriend),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`Status: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        // fetchFriends();
-        setFriends((prev) => prev.map((f) => (f.id === data.id ? data : f)));
-      })
-      .catch((err) => console.error("Error updating friend:", err));
+  const handleUpdateFriend = async (updatedFriend) => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+
+      const response = await fetch(`${API_BASE}/recipient`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedFriend),
+      });
+
+      if (!response.ok) throw new Error(`Status: ${response.status}`);
+
+      const data = await response.json();
+      setFriends((prev) => prev.map((f) => (f.id === data.id ? data : f)));
+    } catch (err) {
+      // console.error("Error updating friend:", err);
+      Alert.alert("Error", "Error updating friend");
+    }
   };
 
   const handleUpdateImage = (friendId, newUrl) => {
@@ -101,8 +117,13 @@ export const HomeScreen = ({ navigation }) => {
 
   const handleDeleteFriend = async (id) => {
     try {
+      const token = await AsyncStorage.getItem("token");
+
       const response = await fetch(`${API_BASE}/recipient/${id}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
@@ -128,6 +149,47 @@ export const HomeScreen = ({ navigation }) => {
   const handleAddFriend = (friendData) => {
     setFriends((prevFriends) => [...prevFriends, friendData]);
   };
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem("token");
+      navigation.replace(ROUTES.LOGIN);
+    } catch (err) {
+      console.error("Error during logout:", err);
+    }
+  };
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          style={{ marginRight: 0}}
+          onPress={() =>
+            Alert.alert(
+              "Log out",
+              "Are you sure you want to log out?",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Log out",
+                  style: "destructive",
+                  onPress: handleLogout,
+                },
+              ],
+              { cancelable: true }
+            )
+          }
+        >
+          <Icon
+            name="exit-outline"
+            size={24}
+            color="#FF3B30"
+            style={{ transform: [{ scaleX: -1 }] }}
+          />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   return (
     <View style={styles.container}>

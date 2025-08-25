@@ -12,6 +12,7 @@ import { API_BASE } from "../config";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { ROUTES } from "../constants";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const GiftsScreen = ({ route }) => {
   const { friendId } = route.params;
@@ -23,7 +24,18 @@ export const GiftsScreen = ({ route }) => {
   const fetchGifts = async () => {
     if (!refreshing) setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/recipient/${friendId}/gift`);
+      const token = await AsyncStorage.getItem("token");
+
+      const response = await fetch(`${API_BASE}/recipient/${friendId}/gift`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Status: ${response.status}`);
+      }
+
       const data = await response.json();
       setGifts(data);
     } catch (error) {
@@ -55,8 +67,13 @@ export const GiftsScreen = ({ route }) => {
 
   const handleDelete = async (id) => {
     try {
+      const token = await AsyncStorage.getItem("token");
+
       const response = await fetch(`${API_BASE}/recipient/gift/${id}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
@@ -71,10 +88,13 @@ export const GiftsScreen = ({ route }) => {
 
   const handleCheckItem = async (giftId, check) => {
     try {
+      const token = await AsyncStorage.getItem("token");
+
       const response = await fetch(`${API_BASE}/recipient/gift/${giftId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(check),
       });

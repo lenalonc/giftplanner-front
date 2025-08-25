@@ -24,7 +24,7 @@ export const FriendCard = ({
   onSwipeableOpen,
 }) => {
   const navigation = useNavigation();
-  const initials = `${friend.firstname[0]}${friend.lastname[0]}`.toUpperCase();
+  const initials = `${friend.firstname[0] || ""}${friend.lastname[0] || ""}`.toUpperCase();
   const swipeableRef = useRef(null);
 
   const renderRightActions = (progress, dragX) => {
